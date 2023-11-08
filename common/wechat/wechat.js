@@ -88,7 +88,7 @@ export default class Wechat {
 		let that = this;
 		let sessionStatus = false;
 		let session_key = '';
-		return await new Promise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			uni.checkSession({
 				success(res) {
 					if (res.errMsg === 'checkSession:ok') sessionStatus = true;
@@ -101,7 +101,7 @@ export default class Wechat {
 								api('user.getWxMiniProgramSessionKey', {
 									code: code,
 								}).then(res => {
-									console.log(1)
+									console.log("授权")
 									if (res.flag) {
 										uni.setStorageSync('session_key', res.data.session_key);
 										uni.setStorageSync('openid', res.data.openid);

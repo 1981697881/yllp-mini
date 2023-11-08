@@ -12,8 +12,7 @@
 						<block slot="btn">
 							<view class="fot-text">
 								<view class="fot-btn">
-									<button @tap.stop="editing(item)"
-										class="cu-btn round lines-blue buy-btn">
+									<button @tap.stop="editing(item)" class="cu-btn round lines-blue buy-btn">
 										编辑
 									</button>
 									<button @tap.stop="deleteEmp(item)" class="cu-btn round lines-red buy-btn">
@@ -38,7 +37,7 @@
 			<view class="tabbar-box">
 				<view class="tabbar-item">
 					<button class="btn1" @tap.stop="onAdd">新增</button>
-				</view> 
+				</view>
 			</view>
 		</view>
 		<!-- 关注弹窗 -->
@@ -91,6 +90,11 @@
 			console.log();
 			this.getGoodsList();
 		},
+		onUnload() {
+			var pages = getCurrentPages(); // 获取当前挂载的路由数组
+			var prePage = pages[pages.length - 2] //获取 上一个页面
+			prePage.$vm.getGoodsList()
+		},
 		methods: {
 			deleteEmp(val) {
 				console.log(val)
@@ -100,9 +104,9 @@
 					content: '是否禁用该用户',
 					success: function(res) {
 						if (res.confirm) {
-							uni.showToast({
-								title: '用户点击确定',
-								duration: 1000
+							//显示加载框
+							uni.showLoading({
+								title: 'Loading'
 							});
 							//反审
 							that.$api('unAudit', {
@@ -124,12 +128,10 @@
 											"IsDeleteEntry": false,
 											"Model": {
 												"FID": val[3],
-												"FEntity": [
-													{
-														"FEntryID": val[5],
-														"FIsDel": true
-													}
-												]
+												"FEntity": [{
+													"FEntryID": val[5],
+													"FIsDel": true
+												}]
 											},
 										}
 									}, 1).then(
@@ -138,59 +140,77 @@
 											if (saveRes != null && saveRes['Result'][
 													'ResponseStatus'
 												]['IsSuccess']) {
-													//提交
-													that.$api('kdSubmit', {
-														"formid": "QDEP_Cust_ShopEmp",
-														"data": {
-															"Ids": val[3],
-														},
-													}, 1).then(submitRes => {
-														let submitReso = submitRes[0];
-														if (submitRes!=null  && submitRes['Result']['ResponseStatus']['IsSuccess']) {
-															//审核
-															that.$api('kdAudit', {
-																"formid": "QDEP_Cust_ShopEmp",
-																"data": {
-																	"Ids": val[3],
-																},
-															}, 1).then(
-																saveRes => {
-																	let saveReso =saveRes[0];
-																	if (saveRes!=null && saveRes['Result']['ResponseStatus']['IsSuccess']) {
-																		that.getGoodsList();
-																	} else {
-																		uni.showToast({
-																			icon: 'none',
-																			title: submitRes[
-																					'Result'
-																					]
-																				[
-																					'ResponseStatus']
-																				[
-																					'Errors']
-																				[
-																					0]
-																				[
-																					'Message']
-																		})
-																	}
-																});
-														} else {
-															uni.showToast({
-																icon: 'none',
-																title: submitRes[
-																		'Result'
-																		][
+												//提交
+												that.$api('kdSubmit', {
+													"formid": "QDEP_Cust_ShopEmp",
+													"data": {
+														"Ids": val[3],
+													},
+												}, 1).then(submitRes => {
+													let submitReso = submitRes[0];
+													if (submitRes != null && submitRes[
+															'Result']['ResponseStatus'][
+															'IsSuccess'
+														]) {
+														//审核
+														that.$api('kdAudit', {
+															"formid": "QDEP_Cust_ShopEmp",
+															"data": {
+																"Ids": val[3],
+															},
+														}, 1).then(
+															saveRes => {
+																let saveReso = saveRes[
+																	0];
+																if (saveRes != null &&
+																	saveRes['Result'][
 																		'ResponseStatus'
-																	][
-																		'Errors']
-																	[0][
-																		'Message']
-															})
-														}
-													});
-												
+																	]['IsSuccess']) {
+																	that
+																.getGoodsList();
+																uni.hideLoading();
+																} else {
+																	uni.hideLoading();
+																	uni.showToast({
+																		icon: 'none',
+																		title: submitRes[
+																				'Result'
+																			]
+																			[
+																				'ResponseStatus'
+																			]
+																			[
+																				'Errors'
+																			]
+																			[
+																				0
+																			]
+																			[
+																				'Message'
+																			]
+																	})
+																}
+															});
+													} else {
+														uni.hideLoading();
+														uni.showToast({
+															icon: 'none',
+															title: submitRes[
+																	'Result'
+																][
+																	'ResponseStatus'
+																][
+																	'Errors'
+																]
+																[0][
+																	'Message'
+																]
+														})
+													}
+												});
+
 											} else {
+												uni.hideLoading();
 												uni.showToast({
 													icon: 'none',
 													title: submitRes[
@@ -212,6 +232,7 @@
 											}
 										});
 								} else {
+									uni.hideLoading();
 									uni.showToast({
 										icon: 'none',
 										title: unAuditRes['Result'][
@@ -221,20 +242,22 @@
 								}
 							});
 						} else if (res.cancel) {
-							uni.showToast({
-								title: '用户点击取消',
-								duration: 1000
-							});
+
 						}
 					}
 				});
 			},
-			editing(val){
+			editing(val) {
 				let obj = {};
 				obj.detail = JSON.stringify(val);
+				obj.type = 1
 				this.jump('/pages/user/wallet/add-user', obj);
-			},onAdd(val){
-				this.jump('/pages/user/wallet/add-user', {});
+			},
+			onAdd() {
+				let obj = {};
+				obj.type = 0
+				obj.detail = JSON.stringify(this.goodsList[0]);
+				this.jump('/pages/user/wallet/add-user', obj);
 			},
 			jump(path, parmas) {
 				this.$Router.push({
@@ -255,7 +278,8 @@
 				that.loadStatus = 'loading';
 				let params = {
 					data: {
-						"FilterString": "FDocumentStatus ='C' and FID=" + this.userInfo[3] + " and FEmpNo != '" + this.userInfo[0] + "' and FIsDel = 0",
+						"FilterString": "FDocumentStatus ='C' and FID=" + this.userInfo[3] + " and FEmpNo != '" + this
+							.userInfo[0] + "' and FIsDel = 0",
 						"FormId": "QDEP_Cust_ShopEmp",
 						"OrderString": "FCreateTime ASC",
 						"FieldKeys": "FEmpNo,FEmpName,FIsManage,FID,FOpenID,FEntity_FEntryID,FWXPwd",
@@ -272,8 +296,8 @@
 						uni.showToast({
 							icon: 'none',
 							title: reso['Result'][
-											'ResponseStatus'
-										]['Errors'][0]['Message']
+								'ResponseStatus'
+							]['Errors'][0]['Message']
 						})
 					}
 				});
@@ -388,51 +412,51 @@
 			}
 		}
 	}
+
 	.app-tabbar-wrap {
-			height: calc(120rpx + env(safe-area-inset-bottom) / 2);
-			padding-bottom: calc(env(safe-area-inset-bottom) / 2);
-			position: relative;
+		height: calc(120rpx + env(safe-area-inset-bottom) / 2);
+		padding-bottom: calc(env(safe-area-inset-bottom) / 2);
+		position: relative;
+		width: 100%;
+		z-index: 70;
+
+		.tabbar-box {
+			position: fixed;
+			display: flex;
+			align-items: center;
 			width: 100%;
-			z-index: 70;
-	
-			.tabbar-box {
-				position: fixed;
+			height: calc(120rpx + env(safe-area-inset-bottom) / 2);
+			border-top: 1rpx solid #eeeeee;
+			background-color: #fff;
+			z-index: 998;
+			bottom: 0;
+			padding-bottom: calc(env(safe-area-inset-bottom) / 2);
+
+			.tabbar-item {
+				height: 100%;
 				display: flex;
+				flex-direction: row;
 				align-items: center;
-				width: 100%;
-				height: calc(120rpx + env(safe-area-inset-bottom) / 2);
-				border-top: 1rpx solid #eeeeee;
-				background-color: #fff;
-				z-index: 998;
-				bottom: 0;
-				padding-bottom: calc(env(safe-area-inset-bottom) / 2);
-	
-				.tabbar-item {
-					height: 100%;
-					display: flex;
-					flex-direction: row;
-					align-items: center;
-					justify-content: center;
-					flex: 1;
-	
-					.btn1 {
-						width: 250rpx;
-						border-radius: 40rpx;
-						color: white;
-						background-color: #10C1B3;
-						font-size: 32rpx;
-					}
-	
-					.btn2 {
-						width: 250rpx;
-						border-radius: 40rpx;
-						color: white;
-						background-color: #3D7DF2;
-						font-size: 32rpx;
-					}
-	
+				justify-content: center;
+				flex: 1;
+
+				.btn1 {
+					width: 250rpx;
+					border-radius: 40rpx;
+					color: white;
+					background-color: #10C1B3;
+					font-size: 32rpx;
 				}
+
+				.btn2 {
+					width: 250rpx;
+					border-radius: 40rpx;
+					color: white;
+					background-color: #3D7DF2;
+					font-size: 32rpx;
+				}
+
 			}
 		}
-	
+	}
 </style>

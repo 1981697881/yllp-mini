@@ -14,7 +14,7 @@
 			<view class="content_box" style="margin-top: -4rpx;overflow: hidden;">
 				<view class="content-box" style="background-color: azure;">
 					<view class="cont-tier flex flex-wrap" :class="userInfo.length>0 && userInfo[4] !=''?'justify-between':'justify-end'">
-						<view class="tier-left" v-if="userInfo.length>0 && userInfo[4] !=''">
+						<view class="tier-left" v-if="userInfo.length>0 && userInfo[4] !=''" @tap.stop="jump('/pages/user/info', {})">
 							<image src="/static/user.png"
 								mode="aspectFill"></image>
 						</view>
@@ -33,7 +33,7 @@
 				<scroll-view class="scroll-box padding-sm" scroll-y scroll-with-animation enable-back-to-top>
 					<block v-if="template" v-for="(item, index) in template" :key="index">
 						<!-- 轮播 -->
-						<sh-banner v-if="item.type === 'banner'" :detail="item.content"></sh-banner>
+						<sh-banner v-if="item.type === 'banner'" :detail="item.content" @tap="jumpToMiniProgram"></sh-banner>
 					</block>
 					<view class="content-box">
 						<view class="box-head bg-white flex flex-wrap justify-between align-center">
@@ -103,18 +103,14 @@
 </template>
 <script>
 	import shBanner from './components/sh-banner.vue';
-	import shSpread from './components/sh-spread.vue';
-	import shNav from './components/sh-nav.vue';
 	import shHotGoods from './components/sh-hot-goods.vue';
 	import shTitleCard from './components/sh-title-card.vue';
 	import fzCircuitMeal from '@/components/fz-circuit-card/fz-circuit-meal.vue';
 	import appNoticeModal from '@/components/app-notice-modal/app-notice-modal.vue';
-	import appSkeletons from '@/components/app-skeletons/app-skeletons.vue';
 	// #ifdef MP-WEIXIN
 	import {
 		HAS_LIVE
 	} from '@/env';
-	import shLive from './components/sh-live.vue';
 	// #endif
 	import {
 		mapMutations,
@@ -132,16 +128,10 @@
 	export default {
 		components: {
 			shBanner,
-			shSpread,
-			shNav,
 			shHotGoods,
 			fzCircuitMeal,
 			appNoticeModal,
-			appSkeletons,
 			shTitleCard,
-			// #ifdef MP-WEIXIN
-			shLive
-			// #endif
 		},
 		data() {
 			return {
@@ -166,11 +156,9 @@
 		computed: {
 			...mapState({
 				initData: state => state.init.initData,
-				city: state => state.init.city,
 				template: state => state.init.templateData?.home,
 				hasTemplate: state => state.init.hasTemplate,
 				/* cartNum: state => state.cart.cartNum, */
-				forceOauth: state => state.user.forceOauth,
 				userInfo: state => state.user.userInfo,
 			}),
 			popupIndex() {
@@ -199,9 +187,6 @@
 			console.log()
 			console.log(this.userInfo.length)
 			console.log(this.userInfo.length==0 || this.userInfo[4] =='')
-		},
-		mounted() {
-			this.getGoodsList();
 			
 		},
 		onShow() {
@@ -213,9 +198,28 @@
 				});
 			} */
 			// #endif
-
+			console.log("进入主页了")
+			setTimeout(()=>{
+				this.getGoodsList();
+			},2000)
 		},
 		methods: {
+			jumpToMiniProgram(){
+				uni.navigateToMiniProgram({
+				    appId: 'wxc7c445137eaf0b62',//被跳转的appId
+				    path: 'pages/index/index',//要跳转的目标小程序（B小程序）的路径
+				    extraData: {},
+					envVersion: 'release', //跳转的版本：develop（开发版），trial（体验版），release（正式版）
+					success(res) {
+					    // 打开成功
+					    console.log(res)
+					},
+					fail(res) {
+				        // 打开失败
+					    console.log(res)
+					}
+				})
+			},
 			//详情
 			toCouponDetail(val) {
 				let obj = {};
@@ -225,13 +229,14 @@
 			},
 			getGoodsList() {
 				let that = this;
+				that.goodsList = []
 				that.loadStatus = 'loading';
 				let params = {
 					data:{
-						"FilterString": "FDocumentStatus ='C' and FOutStatus='待收货'",
+						"FilterString": "FDocumentStatus ='C' and FCustomerID.FNumber ="+this.userInfo[6]+" and FOutStatus='待收货'",
 						"FormId": "SAL_OUTSTOCK",
-						"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-						"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
+						"OrderString": "FBillNo ASC",//FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel
+						"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate",
 						"Limit": "10"
 					}
 				}

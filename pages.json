@@ -24,20 +24,6 @@
 			}
 		},
 		{
-			"path": "pages/index/user",
-			"name": "user",
-			"style": {
-				"navigationBarTitleText": "我的",
-				"navigationStyle": "custom",
-				"enablePullDownRefresh": true
-			},
-			"meta": {
-				"auth": false,
-				"async": true,
-				"title": "我的",
-				"group": "用户"
-			}
-		},{
 			"path": "pages/index/wallet",
 			"name": "wallet",
 			"style": {
@@ -82,8 +68,7 @@
 	],
 	// 分包加载
 	// 不要接受编辑器的组件放置分包建议。因为那些不是在单个分包内使用的,也不知道为啥老报错。
-	"subPackages": [
-		{
+	"subPackages": [{
 			"root": "pages/app",
 			"pages": [
 				// #ifdef MP-WEIXIN
@@ -126,360 +111,8 @@
 						"title": "优惠劵详情",
 						"group": "优惠券"
 					}
-				},
-				{
-					"path": "score/list",
-					"style": {
-						"navigationBarTitleText": "积分商城",
-						"navigationStyle": "custom"
-					},
-					"meta": {
-						"auth": false,
-						"async": true,
-						"title": "积分商城",
-						"group": "应用"
-					}
-				},
-				{
-					"path": "merchant/index",
-					"style": {
-						"navigationBarTitleText": "",
-						"navigationStyle": "custom",
-						"enablePullDownRefresh": true
-
-					},
-					"meta": {
-						"auth": true,
-						"async": true,
-						"title": "商户信息",
-						"group": "用户"
-					}
-				},
-				{
-					"path": "merchant/info",
-					"style": {
-						"navigationBarTitleText": "门店信息"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false,
-						"title": "门店信息",
-						"group": "用户"
-					}
-				},
-				{
-					"path": "merchant/list",
-					"style": {
-						"navigationBarTitleText": "切换门店"
-					},
-					"meta": {
-						"auth": true,
-						"async": false,
-						"title": "切换门店",
-						"group": "用户"
-					}
-				},
-				{
-					"path": "merchant/detail",
-					"style": {
-						"navigationBarTitleText": "订单详情"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
 				}
-			]
-		},
-		
-		{
-			"root": "pages/goods",
-			"pages": [
-				// 商品goods------start
-				{
-					"path": "list",
-					"style": {
-						"navigationBarTitleText": "商品列表",
-						"navigationStyle": "custom"
-					},
-					"meta": {
-						"auth": false,
-						"async": true,
-						"title": "商品列表",
-						"group": "商城"
-					}
-				},
-				{
-					"path": "comment-list",
-					"style": {
-						"navigationBarTitleText": "商品评价"
 
-					},
-					"meta": {
-						"auth": false,
-						"async": false
-					}
-				},
-				{
-					"path": "detail/index",
-					"style": {
-						"navigationBarTitleText": "商品详情"
-					},
-					"meta": {
-						"auth": false,
-						"async": true,
-						"title": "商品详情",
-						"group": "商城"
-					}
-				}
-				// 商品goods------end
-
-			]
-		},
-		{
-			"root": "pages/wallet",
-			"pages": [
-				// 票夹------start
-				{
-					"path": "index",
-					"style": {
-						"navigationBarTitleText": "票据详情",
-						"navigationBarBackgroundColor": "#03AFFF",
-						"navigationBarTextStyle": "white"
-					},
-					"meta": {
-						"auth": true,
-						"async": true
-					}
-				}, {
-					"path": "goodsIndex",
-					"style": {
-						"navigationBarTitleText": "票据详情",
-						"navigationBarBackgroundColor": "#03AFFF",
-						"navigationBarTextStyle": "white"
-					},
-					"meta": {
-						"auth": true,
-						"async": true
-					}
-				}
-				// 票夹------end
-			]
-		},
-		{
-			"root": "pages/location",
-			"pages": [
-				// 定位------start
-				{
-					"path": "list",
-					"style": {
-						"navigationBarTitleText": "定位",
-						"navigationStyle": "custom"
-					},
-					"meta": {
-						"auth": false,
-						"async": true,
-						"title": "定位",
-						"group": "位置信息"
-					}
-				}
-				// 定位------end
-			]
-		},
-		{
-			"root": "pages/order",
-			"pages": [
-				// 订单order------start
-				{
-					"path": "confirm",
-					"style": {
-						"navigationBarTitleText": "确认订单"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				}, {
-					"path": "reserve",
-					"style": {
-						"navigationBarTitleText": "确认订单"
-
-					},
-					"meta": {
-						"auth": false,
-						"async": true
-					}
-				},
-				{
-					"path": "business-address",
-					"style": {
-						"navigationBarTitleText": "选择自提点",
-						"navigationStyle": "custom"
-							// #ifdef APP-VUE
-							,
-						"app-plus": {
-							"titleNView": {
-								"type": "transparent"
-							}
-						}
-						// #endif
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "distribution",
-					"style": {
-						"navigationBarTitleText": "", //配送方式详情
-						"enablePullDownRefresh": true
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "detail",
-					"style": {
-						"navigationBarTitleText": "订单详情"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "list",
-					"name": "orderList",
-					"style": {
-						"navigationBarTitleText": "订单列表"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": true,
-						"title": "我的订单",
-						"group": "用户"
-					}
-				},
-				{
-					"path": "add-comment",
-					"style": {
-						"navigationBarTitleText": "发表评论"
-
-					},
-					"meta": {
-						"auth": false,
-						"async": true
-					}
-				},
-				{
-					"path": "express",
-					"name": "express",
-					"style": {
-						"navigationBarTitleText": "物流信息"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "express-list",
-					"style": {
-						"navigationBarTitleText": "物流详情"
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "after-sale/refund",
-					"style": {
-						"navigationBarTitleText": "申请售后"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "after-sale/list",
-					"style": {
-						"navigationBarTitleText": "退换/售后列表"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "after-sale/detail",
-					"style": {
-						"navigationBarTitleText": "服务单详情"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "after-sale/log",
-					"style": {
-						"navigationBarTitleText": "进度详情"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "payment/method",
-					"style": {
-						"navigationBarTitleText": "支付方式"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				}, {
-					"path": "payment/chargeMoney",
-					"style": {
-						"navigationBarTitleText": "支付方式"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				},
-				{
-					"path": "payment/result",
-					"style": {
-						"navigationBarTitleText": "支付结果"
-
-					},
-					"meta": {
-						"auth": true,
-						"async": false
-					}
-				}
-				// 定单 order ------end
 			]
 		},
 		{
@@ -674,23 +307,33 @@
 					}
 				}
 				// 我的user ------ end
-			    ,{
-                    "path" : "wallet/add-user",
-                    "style" :                                                                                    
-                {
-                    "navigationBarTitleText": "用户信息",
-					"navigationStyle": "custom"
-                },
-				"meta": {
-					"auth": false,
-					"async": false,
-					"title": "用户信息",
-					"group": "用户"
-				
+				, {
+					"path": "wallet/add-user",
+					"style": {
+						"navigationBarTitleText": "用户信息",
+						"navigationStyle": "custom"
+					},
+					"meta": {
+						"auth": false,
+						"async": false,
+						"title": "用户信息",
+						"group": "用户"
+
+					}
+				}, {
+					"path": "info",
+					"style": {
+						"navigationBarTitleText": "用户信息"
+					},
+					"meta": {
+						"auth": false,
+						"async": false,
+						"title": "用户信息",
+						"group": "用户"
+
+					}
 				}
-                
-                }
-            ]
+			]
 		}
 	],
 	// 分包预加载规则

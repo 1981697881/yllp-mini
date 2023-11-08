@@ -33,6 +33,11 @@
 
 <script>
 	import appCoupon from '@/components/app-coupon/app-coupon.vue';
+	import {
+		mapMutations,
+		mapActions,
+		mapState
+	} from 'vuex';
 	export default {
 		components: {
 			appCoupon
@@ -81,11 +86,23 @@
 				couponList: []
 			};
 		},
-		computed: {},
+		computed: {
+			...mapState({
+				userInfo: state => state.user.userInfo,
+			}),
+		},
 		onShow() {
 			this.getCouponList();;
 		},
+		onUnload() {
+			var pages = getCurrentPages(); // 获取当前挂载的路由数组
+			var prePage = pages[pages.length - 2] //获取 上一个页面
+			prePage.$vm.getGoodsList()
+		},
 		methods: {
+			clearSearch(){
+				this.$set(this,'searchVal','')
+			},
 			fabClick() {
 				let that = this;
 				uni.scanCode({
@@ -111,6 +128,11 @@
 				});
 			},
 			onSearch() {
+				this.couponList = [];
+				this.getCouponList()
+			},
+			onInput(){
+				this.couponList = [];
 				this.getCouponList()
 			},
 			getCouponList() {
@@ -121,21 +143,21 @@
 					if (that.searchVal != '') {
 						params = {
 							data: {
-								"FilterString": "FDocumentStatus ='C' and FBillNo='" + that.searchVal + "'",
+								"FilterString": "FDocumentStatus ='C' and FCustomerID.FNumber ="+this.userInfo[6]+" and FBillNo='" + that.searchVal + "'",
 								"FormId": "SAL_OUTSTOCK",
-								"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
-								"Limit": "20"
+								"OrderString": "FBillNo ASC",
+								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FCarriageNO,FID,FOutStatus",
+								"Limit": "30"
 							}
 						}
 					} else {
 						params = {
 							data: {
-								"FilterString": "FDocumentStatus ='C'",
+								"FilterString": "FDocumentStatus ='C' and FCustomerID.FNumber ="+this.userInfo[6]+" and FCustomerID.FNumber ="+this.userInfo[6]+"",
 								"FormId": "SAL_OUTSTOCK",
-								"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
-								"Limit": "20"
+								"OrderString": "FBillNo ASC",
+								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FCarriageNO,FID,FOutStatus",
+								"Limit": "30"
 							}
 						}
 					}
@@ -143,21 +165,21 @@
 					if (that.searchVal != '') {
 						params = {
 							data: {
-								"FilterString": "FDocumentStatus ='C' and FOutStatus='' and FBillNo='" + that.searchVal + "'",
+								"FilterString": "FDocumentStatus ='C' and FCustomerID.FNumber ="+this.userInfo[6]+" and FOutStatus='' and FBillNo='" + that.searchVal + "'",
 								"FormId": "SAL_OUTSTOCK",
-								"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
-								"Limit": "20"
+								"OrderString": "FBillNo ASC",
+								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FCarriageNO,FID,FOutStatus",
+								"Limit": "30"
 							}
 						}
 					} else {
 						params = {
 							data: {
-								"FilterString": "FDocumentStatus ='C' and FOutStatus=''",
+								"FilterString": "FDocumentStatus ='C' and FCustomerID.FNumber ="+this.userInfo[6]+" and FOutStatus=''",
 								"FormId": "SAL_OUTSTOCK",
-								"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
-								"Limit": "20"
+								"OrderString": "FBillNo ASC",
+								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FCarriageNO,FID,FOutStatus",
+								"Limit": "30"
 							}
 						}
 					}
@@ -165,26 +187,25 @@
 					if (that.searchVal != '') {
 						params = {
 							data: {
-								"FilterString": "FDocumentStatus ='C' and FOutStatus='" + that.status +
+								"FilterString": "FDocumentStatus ='C' and FCustomerID.FNumber ="+this.userInfo[6]+" and FOutStatus='" + that.status +
 									"' and FBillNo='" + that.searchVal + "'",
 								"FormId": "SAL_OUTSTOCK",
-								"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
-								"Limit": "20"
+								"OrderString": "FBillNo ASC",
+								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FCarriageNO,FID,FOutStatus",
+								"Limit": "30"
 							}
 						}
 					} else {
 						params = {
 							data: {
-								"FilterString": "FDocumentStatus ='C' and FOutStatus='" + that.status + "'",
+								"FilterString": "FDocumentStatus ='C' and FCustomerID.FNumber ="+this.userInfo[6]+" and FOutStatus='" + that.status + "'",
 								"FormId": "SAL_OUTSTOCK",
-								"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
-								"Limit": "20"
+								"OrderString": "FBillNo ASC",
+								"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FCarriageNO,FID,FOutStatus",
+								"Limit": "30"
 							}
 						}
 					}
-
 				}
 				that.$api('executeBillQuery', params, 1).then(res => {
 					let reso = res[0];
@@ -194,6 +215,7 @@
 						that.loadStatus = 'over';
 					} else {
 						if (res.length == 0) {
+							that.couponList = []
 							uni.showToast({
 								icon: 'none',
 								title: "无数据"

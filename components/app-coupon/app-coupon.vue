@@ -6,18 +6,18 @@
 					<view class="sum-box">
 						<text class="unit">订单号：{{couponData[0]}}</text>
 					</view>
-					<view class="notice">{{couponData[15]==''?'待发货':couponData[15]}}</view>
+					<view class="notice">{{couponData[6].trim()==''?'待发货':couponData[6]}}</view>
 				</view>
 				<view class="coupon-center">
 					<view class="sum-box">
 						<text class="unit"><text style="color:#8D9097">出库时间：</text>{{couponData[3].substring(0, 10)}}</text>
 					</view>
-					<view class="notice">单据数量：{{couponData[12]}}</view>
+					<!-- <view class="notice">单据数量：{{couponData[4]}}</view> -->
 				</view>
-				<view class="noticet">物料名称：<text class="text-black">{{couponData[6]}}</text></view>
+				<view class="noticet">运输单号：<text class="text-black">{{couponData[4]}}</text></view>
 				<!-- <view class="coupon-right">
-					<button class="cu-btn get-btn" v-if="couponData[15] != '已入库'">入库V8</button>
-					<button class="cu-btn get-btn bg-blue" v-if="couponData[15] != '已收货' && couponData[15] != '已入库'" @tap.stop="onSubmit(couponData)">确认收货</button>
+					<button class="cu-btn get-btn" v-if="couponData[7] != '已入库'">入库V8</button>
+					<button class="cu-btn get-btn bg-blue" v-if="couponData[7] != '已收货' && couponData[7] != '已入库'" @tap.stop="onSubmit(couponData)">确认收货</button>
 				</view> -->
 			</view>
 		</view>

@@ -56,16 +56,22 @@ const actions = {
 					"FilterString": "FDocumentStatus ='C' and FOpenID ='"+uni.getStorageSync('openid')+"'",
 					"FormId": "QDEP_Cust_ShopEmp",
 					"OrderString": "FCreateTime ASC",
-					"FieldKeys": "FEmpNo,FEmpName,FIsManage,FID,FOpenID,FEntity_FEntryID",
+					"FieldKeys": "FEmpNo,FEmpName,FIsManage,FID,FOpenID,FEntity_FEntryID,FCustID.FNUMBER,FIsRec,FIsView",
 				}
 			}
 			api('executeBillQueryAuth', params,1).then(userRes => {
+				console.log(userRes)
 				let userReso = userRes[0];
 				if (userRes.length>0) {
 					commit('LOGIN_TIP', false);
 					commit('USER_INFO', userReso);
 					uni.setStorageSync('userInfo', userReso);
 				}else{
+					if(userRes.length==0){
+						commit('LOGIN_TIP', true);
+						commit('USER_INFO', []);
+						uni.removeStorageSync('userInfo');
+					}
 					uni.showToast({
 						icon: 'none',
 						title: userReso[0]['Result']['ResponseStatus']['Errors'][0]['Message']
@@ -208,7 +214,7 @@ const mutations = {
 		uni.removeStorageSync('userInfo');
 		uni.removeStorageSync('storeInfo');
 		uni.removeStorageSync('cartNum');
-		store.commit('USER_INFO', {});
+		store.commit('USER_INFO', []);
 		store.commit('CART_LIST', []);
 		store.commit('CART_NUM');
 		store.commit('ORDER_NUMBER', {});

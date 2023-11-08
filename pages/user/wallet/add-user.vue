@@ -27,7 +27,8 @@
 		</view>
 		<view class="notice flex align-center">请填写用户信息</view>
 		<view class="btn-box flex align-center "><!-- <button class="cu-btn bg-green confirem-btn" @tap="addUser">新增</button> --><button
-				class="cu-btn bg-blue confirem-btn" @tap="saveData">确定</button></view>
+				class="cu-btn bg-blue confirem-btn" :disabled="isClick" @tap="saveData">确定</button></view>
+		<app-load v-model="isLoading"></app-load>
 	</view>
 </template>
 
@@ -40,12 +41,14 @@
 		components: {},
 		data() {
 			return {
+				isLoading: false, //loading
 				bankInfo: {
 					WechatNo: '',
 					name: '',
 					password: '',
 				},
 				show: false,
+				isClick: false,
 				cardslist: [],
 				fentryid: 0,
 				userArr: [],
@@ -87,24 +90,21 @@
 		onShow() {
 			if (this.$Route.query.detail) {
 				const {
-					detail
+					detail,type
 				} = this.$Route.query;
 				this.userArr = JSON.parse(detail)
-				this.bankInfo = {
-					WechatNo: this.userArr[0],
-					name: this.userArr[1],
-					password: this.userArr[6],
+				console.log(this.userArr)
+				if(type == 1){
+					this.bankInfo = {
+						WechatNo: this.userArr[0],
+						name: this.userArr[1],
+						password: this.userArr[6],
+					}
+					this.fentryid = JSON.parse(detail)[5]
 				}
-				this.fentryid = JSON.parse(detail)[5]
 			}
 		},
 		onLoad(option) {
-			if (JSON.stringify(option) != '{}') {
-				this.bankInfo.WechatId = option.WechatId;
-				this.bankInfo.PublicOpenID = option.PublicOpenID;
-			}
-			this.bankInfo.phone = this.userinfo.phoneNumber;
-			//this.getBankInfo();
 		},
 		methods: {
 			...mapActions(['getUserInfo']),
@@ -124,6 +124,8 @@
 				let that = this;
 				that.$refs.uForm.validate(valid => {
 					if (valid) {
+						that.isLoading = true;
+						that.isClick = true;
 						//反审
 							that.$api('unAudit', {
 								"formid": "QDEP_Cust_ShopEmp",
@@ -185,6 +187,8 @@
 																	'ResponseStatus'
 																]['IsSuccess']) {
 																that.getUserInfo();
+																that.isLoading = false;
+																that.isClick = false;
 																setTimeout(() => {
 																	var pages =
 																		getCurrentPages(); // 获取当前挂载的路由数组
@@ -203,6 +207,8 @@
 																	})
 																}, 1000);
 															} else {
+																that.isLoading = false;
+																that.isClick = false;
 																uni.showToast({
 																	icon: 'none',
 																	title: auditReso[
@@ -224,6 +230,8 @@
 															}
 														});
 												} else {
+													that.isLoading = false;
+													that.isClick = false;
 													uni.showToast({
 														icon: 'none',
 														title: submitRes[
@@ -240,6 +248,8 @@
 												}
 											});
 										} else {
+											that.isLoading = false;
+											that.isClick = false;
 											uni.showToast({
 												icon: 'none',
 												title: saveRes['Result'][
@@ -251,6 +261,8 @@
 										}
 									});
 								} else {
+									that.isLoading = false;
+									that.isClick = false;
 									uni.showToast({
 										icon: 'none',
 										title: unAuditRes['Result'][

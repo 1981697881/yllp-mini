@@ -4,9 +4,6 @@ import {
 
 export default class Request {
 	constructor(type) {
-		console.log(API_URL)
-		console.log(API_URLT)
-		console.log(type == 0 ? API_URL : API_URLT)
 		this.config = {
 			baseUrl: type == 0 ? API_URL : API_URLT,
 			header: {

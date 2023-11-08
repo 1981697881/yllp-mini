@@ -79,6 +79,11 @@
 			this.bankInfo.phone = this.userinfo.phoneNumber;
 			//this.getBankInfo();
 		},
+		onUnload() {
+			var pages = getCurrentPages(); // 获取当前挂载的路由数组
+			var prePage = pages[pages.length - 2] //获取 上一个页面
+			prePage.$vm.getGoodsList()
+		},
 		methods: {
 			...mapActions(['getUserInfo']),
 			confirm(e) {

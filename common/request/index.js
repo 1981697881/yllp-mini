@@ -8,7 +8,7 @@ export default function api(url, data = {},type = 0 ) {
 	request.interceptor.request((config, cancel) => { /* 请求之前拦截器 */
 		if (api.auth) {
 			let userInfo = uni.getStorageSync('userInfo');
-			if (!userInfo) {
+			if (userInfo.length == 0 || userInfo[4] == '') {
 				store.commit('LOGIN_TIP', true)
 				store.commit('OUT_LOGIN');
 				throw('暂未登录,已阻止此次API请求~');

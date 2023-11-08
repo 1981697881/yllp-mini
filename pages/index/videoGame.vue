@@ -4,7 +4,7 @@
 			<view class="cont-tier flex flex-wrap justify-between">
 				<view class="tier-center">
 					<text class="cuIcon-shop" style="float: left;"></text>
-					<view class="text-xl cent-name text-bold">订单号：{{goodsList.length>0?goodsList[0][0]:"无"}}</view>
+					<view class="text-xl cent-name text-bold">订单号：{{goodsList.length>0?goodsList[0][0]:"无"}} </view>
 					<view class="cent-tip">单据日期：{{goodsList.length>0?goodsList[0][3].substring(0, 10):"无"}}</view>
 				</view>
 				<view class="tier-right">
@@ -12,7 +12,8 @@
 				</view>
 			</view>
 		</view>
-		<view class="content_box">
+
+		<view class="content_box" v-if="!isTake && !isWarehousing">
 			<scroll-view :style="{ height: hHeight + 'px;background-color: #F3F3F3;' }" class="scroll-box bg-white"
 				scroll-y enable-back-to-top scroll-with-animation @scrolltolower="loadMore">
 				<view class="content-box">
@@ -28,14 +29,42 @@
 				</view>
 			</scroll-view>
 		</view>
+		<view class="content_box" v-else>
+			<scroll-view :style="{ height: hHeight + 'px;background-color: #F3F3F3;' }" class="scroll-box bg-white"
+				scroll-y enable-back-to-top scroll-with-animation @scrolltolower="loadMore">
+				<view class="content-box">
+					<view class="goods-list x-f">
+						<view class="goods-item" v-for="(goods, index) in goodsListT" :key="index">
+							<fz-circuit-pick :detail="goods" :pickType="pickType" :isTag="true">
+								<block slot="btn">
+									<view class="fot-text" v-if="isTake">
+										<view class="fot-btn">
+											<button :disabled="isClickSub" @tap.stop="takeOver(goods)"
+												class="cu-btn round lines-blue buy-btn">
+												收货
+											</button>
+										</view>
+									</view>
+								</block>
+							</fz-circuit-pick>
+						</view>
+					</view>
+					<!-- 加载更多 -->
+					<view v-if="goodsListT.length" class="cu-load text-gray" :class="loadStatus"></view>
+					<!-- load -->
+					<app-load v-model="isLoading"></app-load>
+				</view>
+			</scroll-view>
+		</view>
 		<view class="foot_box"></view>
 		<!-- 自定义底部导航 -->
 		<view class="app-tabbar-wrap" v-if="goodsList.length>0">
 			<view class="tabbar-box">
 				<view class="tabbar-item">
-					<button class="btn1" v-if="isWarehousing" @tap.stop="onWarehousing">入库V8</button>
-					<button class="btn2" v-if="isTake" @tap.stop="onSubmit">确认收货</button>
-				</view> 
+					<button class="btn1" v-if="isWarehousing" :disabled="isClickWare"
+						@tap.stop="onWarehousing">入库V8</button>
+					<!-- <button class="btn2" v-if="isTake" :disabled="isClickSub" @tap.stop="onSubmit">确认收货</button> -->
+				</view>
 			</view>
 		</view>
 		<!-- 关注弹窗 -->
@@ -44,14 +73,12 @@
 		<app-notice-modal></app-notice-modal>
 		<!-- 登录提示
 		<app-login-modal></app-login-modal> -->
-		<!-- 门店选择 -->
-		<app-address-model @init="init"></app-address-model>
 	</view>
 </template>
 
 <script>
-	import moreGoodList from '@/csJson/moreGoodList.json';
 	import fzCircuitMeal from '@/components/fz-circuit-card/fz-circuit-box.vue';
+	import fzCircuitPick from '@/components/fz-circuit-card/fz-circuit-pick.vue';
 	import AppPay from '@/common/app-pay';
 	import {
 		mapMutations,
@@ -60,7 +87,8 @@
 	} from 'vuex';
 	export default {
 		components: {
-			fzCircuitMeal
+			fzCircuitMeal,
+			fzCircuitPick
 		},
 		data() {
 			return {
@@ -69,6 +97,8 @@
 					keywords: '',
 					page: 1
 				},
+				isClickWare: false,
+				isClickSub: false,
 				isTake: false,
 				isWarehousing: false,
 				pickType: 0,
@@ -77,7 +107,9 @@
 				loadStatus: '', //loading,over
 				lastPage: 1,
 				fBillNo: '',
-				goodsList: []
+				scanCode: '',
+				goodsList: [],
+				goodsListT: []
 			};
 		},
 		props: {
@@ -95,7 +127,7 @@
 			console.log(detail)
 			if (type == 0) {
 				this.getGoodsList(JSON.parse(detail)[0])
-			} else if(type == 1){
+			} else if (type == 1) {
 				this.getPickList(detail);
 			}
 			this.pickType = type
@@ -103,14 +135,21 @@
 		},
 		onLoad(options) {
 			let that = this;
-			console.log(options)
 			let q = decodeURIComponent(options.q);
-			console.log(q)
-			console.log(that.GetRequest(q).type)
 			if (typeof that.GetRequest(q).type != "undefined") {
 				if (that.GetRequest(q).type == 1) {
-					this.getPickList(that.GetRequest(q).code);
+					that.getPickList(that.GetRequest(q).code);
+					that.scanCode = that.GetRequest(q).code
 				}
+			}
+		},
+		onUnload() {
+			var pages = getCurrentPages(); // 获取当前挂载的路由数组
+			var prePage = pages[pages.length - 2] //获取 上一个页面
+			if (typeof prePage.$vm.getCouponList == "function") {
+				prePage.$vm.getCouponList()
+			} else {
+				prePage.$vm.getGoodsList()
 			}
 		},
 		computed: {
@@ -164,23 +203,340 @@
 				that.loadStatus = 'loading';
 
 			},
-			onWarehousing(){
+			onWarehousing() {
+				let that = this;
+				that.isLoading = true;
+				that.isClickWare = true;
 				uni.showToast({
 					title: '入库成功',
 					icon: 'success',
 				});
 				setTimeout(() => {
+					that.isLoading = false;
+					that.isClickWare = false;
 					var pages = getCurrentPages(); // 获取当前挂载的路由数组
 					var prePage = pages[pages.length - 2] //获取 上一个页面
 					uni.navigateBack({
 						success() {
-								prePage.$vm.getCouponList() // 当返回成功的时候调用上一级页面的回调
-					     }
+							if (typeof prePage.$vm.getCouponList == "function") {
+								prePage.$vm.getCouponList()
+							} else {
+								prePage.$vm.getGoodsList()
+							}
+						}
 					})
 				}, 1000);
 			},
+			treeToArray(tree) {
+				const result = [];
+				const queue = [tree];
+				while (queue.length > 0) {
+					const node = queue.shift();
+					if (node.children) {
+						node.children.forEach(child => {
+							queue.push(child);
+						});
+					} else {
+						result.push(node);
+					}
+				}
+
+				return result;
+			},
+			async takeOver(takeItem) {
+				let that = this
+				if (!that.userInfo[7]) {
+					return uni.showToast({
+						title: '该账号无收货权限',
+						icon: 'error',
+					});
+				}
+				that.isLoading = true;
+				that.isClickSub = true;
+				console.log(takeItem);
+				let takeArray = that.treeToArray(takeItem);
+				console.log(takeArray)
+				//提交数据整理，多单循环提交
+				var orderList = []
+				for (var element in takeArray) {
+					if (orderList.findIndex(x => x.FID === takeArray[element]['FSrcID']) == -1) {
+						//提交单据次数
+						orderList.push({
+							"FID": takeArray[element]['FSrcID'],
+							"FEntity": [{
+								"FEntryID": takeArray[element]['FSrcEntryID'],
+								"FActRecQty": takeArray[element]['FQty']
+							}]
+						})
+					} else {
+						for (var fEntity in orderList) {
+							//单据明细组装
+							if (takeArray[element]['FSrcID'] == orderList[fEntity]['FID']) {
+								if (orderList[fEntity]['FEntity'].findIndex(x => x.FEntryID === takeArray[element]['FSrcEntryID']) == -1) {
+									orderList[fEntity]['FEntity'].push({
+										"FEntryID": takeArray[element]['FSrcEntryID'],
+										"FActRecQty": takeArray[element]['FQty']
+									})
+								} else {
+									//相同项进行数量合计
+									var findx = orderList[fEntity]['FEntity'].findIndex(x => x.FEntryID === takeArray[element]['FSrcEntryID']);
+									orderList[fEntity]['FEntity'][findx]['FActRecQty'] = that.addCount(parseFloat(
+										orderList[fEntity]['FEntity'][findx]['FActRecQty']), parseFloat(takeArray[
+										element]['FQty']))
+								}
+
+							}
+						}
+					}
+				}
+				//获取数量 计算分录是否完成收货
+				for (var orderFid in orderList) {
+					var entityData = orderList[orderFid]['FEntity']
+					for (var orderEntity in entityData) {
+						let params = {
+							data: {
+								"FilterString": "FID =" + orderList[orderFid]['FID'] + " and FEntryId=" + entityData[orderEntity]['FEntryID'] +" and FEntryOutStatus = '待收货'",
+								"FormId": "SAL_OUTSTOCK",
+								"OrderString": "FBillNo ASC",
+								"FieldKeys": "FActRecQty,FEntryActRecQty,FRealQty,FEntity_FEntryId,FEntryOutStatus",
+							}
+						}
+						await that.$api('executeBillQuery', params, 1).then(res => {
+							let reso = res[0];
+							if (res.length > 0) {
+								let FActRecQty = res[0][0],
+									FEntryActRecQty = res[0][1],
+									FRealQty = res[0][2];
+								
+								if(Number(FRealQty) - (Number(FActRecQty) + Number(entityData[orderEntity]['FActRecQty'])) <=0){
+									entityData[orderEntity].FEntryOutStatus = '已收货'
+								}else{
+									entityData[orderEntity].FEntryOutStatus = '待收货'
+								}
+								entityData[orderEntity].FEntryActRecQty = Number(FRealQty) - (Number(FActRecQty) + Number(entityData[orderEntity]['FActRecQty']))
+								entityData[orderEntity].FActRecQty = Number(FActRecQty) + Number(entityData[orderEntity]['FActRecQty'])
+								console.log(Number(FRealQty) - (Number(FActRecQty) + Number(entityData[orderEntity]['FActRecQty'])))
+							} else {
+								if (res.length == 0) {
+									uni.showToast({
+										icon: 'none',
+										title: "查不到源单数据或该项已完成收货"
+									})
+								} else {
+									uni.showToast({
+										icon: 'none',
+										title: reso[0]['Result']['ResponseStatus']['Errors'][0]['Message']
+									})
+								}
+
+							}
+						});
+					}
+				}
+				console.log(orderList)
+				//批量反写实收数量和分录状态
+				for (var saveList in orderList) {
+					await that.$api('kdSave', {
+						"formid": "SAL_OUTSTOCK",
+						"data": {
+							"NeedUpDataFields": ["FEntity"],
+							"NeedReturnFields": ["FEntity"],
+							"IsDeleteEntry": false,
+							"Model": orderList[saveList],
+						}
+					}, 1).then(
+						saveRes => {
+							let saveReso = saveRes[0];
+							if (saveRes != null && saveRes['Result'][
+									'ResponseStatus'
+								]['IsSuccess']) {
+								//查询对应单据 是否完成收货 是：修改单据，否：跳过
+								 that.$api('executeBillQuery', {
+									data: {
+										"FilterString": "FID =" + orderList[orderFid]['FID'] + " and FEntryOutStatus = '待收货' and FEntryOutStatus !=''",
+										"FormId": "SAL_OUTSTOCK",
+										"OrderString": "FBillNo ASC",
+										"FieldKeys": "FEntryOutStatus",
+									}
+								}, 1).then(statusRes => {
+									if (statusRes.length == 0) {
+										//修改状态
+										that.$api('kdSave', {
+											"formid": "SAL_OUTSTOCK",
+											"data": {
+												"NeedUpDataFields": ["FEntity"],
+												"NeedReturnFields": ["FEntity"],
+												"IsDeleteEntry": false,
+												"Model": {
+													"FID": takeArray[element]['FSrcID'],
+													"FOutStatus": "已收货",
+												},
+											}
+										}, 1).then(
+											saveTRes => {
+												let saveTReso = saveTRes[0];
+												if (saveTRes != null && saveTRes['Result'][
+														'ResponseStatus'
+													]['IsSuccess']) {
+													that.isLoading = false;
+													that.isClickSub = false;
+													uni.showToast({
+														title: '收货成功',
+														icon: 'success',
+													});
+													if (that.pickType == 0) {
+														that.getGoodsList(that.goodsList[0][0])
+													} else if (that.pickType == 1) {
+														that.getPickList(that.scanCode);
+													}
+												} else {
+													that.isLoading = false;
+													that.isClickSub = false;
+													uni.showToast({
+														icon: 'none',
+														title: saveTRes[
+																'Result'
+															]
+															[
+																'ResponseStatus'
+															]
+															[
+																'Errors'
+															]
+															[
+																0
+															]
+															[
+																'Message'
+															]
+													})
+												}
+											});
+									}else{
+										that.isLoading = false;
+										that.isClickSub = false;
+										uni.showToast({
+											title: '收货成功',
+											icon: 'success',
+										});
+										if (that.pickType == 0) {
+											that.getGoodsList(that.goodsList[0][0])
+										} else if (that.pickType == 1) {
+											that.getPickList(that.scanCode);
+										}
+									}
+								});
+								if (Number(saveList) + 1 == orderList.length){
+									let takeParams = {}
+									takeParams.FID = takeArray[0]['FID']
+									takeParams.FEntity = []
+									for(let takeBox in takeArray){
+										takeParams.FEntity.push({
+											FEntryID: takeArray[takeBox]['FEntity_FEntryID'],
+											FBoxQty: takeArray[takeBox]['FQty'],
+										})
+									}
+									//修改装箱单
+									that.$api('kdSave', {
+											"formid": "QDEP_Cust_PackInfo",
+											"data": {
+												"NeedUpDataFields": [
+													"FEntity"
+												],
+												"NeedReturnFields": [
+													"FEntity"
+												],
+												"IsDeleteEntry": false,
+												"Model": takeParams,
+											}
+										}, 1).then(takeRes => {
+											let takeReso = takeRes[0];
+											if (takeRes != null &&takeRes['Result']['ResponseStatus']['IsSuccess']) {
+												//查询对应单据 是否完成收货 是：修改单据，否：跳过
+												 that.$api('executeBillQuery', {
+													data: {
+														"FilterString": "FID =" + takeArray[0]['FID'] + " and FIsRec = 0 and FBoxQty =0",
+														"FormId": "QDEP_Cust_PackInfo",
+														"OrderString": "FBillNo ASC",
+														"FieldKeys": "FBoxQty",
+													}
+												}, 1).then(takeStatusRes => {
+													if (takeStatusRes.length == 0) {
+														//修改装箱单
+															that.$api('kdSave', {
+																	"formid": "QDEP_Cust_PackInfo",
+																	"data": {
+																		"NeedUpDataFields": [
+																			"FEntity"
+																		],
+																		"NeedReturnFields": [
+																			"FEntity"
+																		],
+																		"IsDeleteEntry": false,
+																		"Model": {
+																			"FID": takeArray[0]['FID'],
+																			"FIsRec": true,
+																		},
+																	}
+																}, 1).then(takeTRes => {
+																	let takeTReso = takeTRes[0];
+																	if (takeTRes != null &&takeTRes['Result']['ResponseStatus']['IsSuccess']) {
+																		
+																	} else {
+																		uni.showToast({
+																				icon: 'none',
+																				title: takeTRes['Result']['ResponseStatus']['Errors'][0]['Message']
+																		})
+																	}
+														});
+														
+														
+													}
+												});
+											} else {
+												uni.showToast({
+													icon: 'none',
+													title: takeRes['Result']['ResponseStatus']['Errors'][0]['Message']
+												})
+											}
+										});
+								}
+							} else {
+								that.isLoading = false;
+								that.isClickSub = false;
+								uni.showToast({
+									icon: 'none',
+									title: saveRes[
+											'Result'
+										]
+										[
+											'ResponseStatus'
+										]
+										[
+											'Errors'
+										]
+										[
+											0
+										]
+										[
+											'Message'
+										]
+								})
+							}
+						});
+				}
+				
+			},
 			onSubmit() {
 				let that = this
+				if (!that.userInfo[7]) {
+					return uni.showToast({
+						title: '该账号无收货权限',
+						icon: 'error',
+					});
+				}
+				that.isLoading = true;
+				that.isClickSub = true;
 				if (that.pickType == 0) {
 					var fEntity = []
 					for (var element in that.goodsList) {
@@ -246,16 +602,35 @@
 																title: '收货成功',
 																icon: 'success',
 															});
+															that.isLoading = false;
+															that.isClickSub = false;
 															setTimeout(() => {
-																var pages = getCurrentPages(); // 获取当前挂载的路由数组
-																var prePage = pages[pages.length - 2] //获取 上一个页面
+																var pages =
+																	getCurrentPages(); // 获取当前挂载的路由数组
+																var prePage = pages[pages
+																	.length - 2
+																] //获取 上一个页面
 																uni.navigateBack({
 																	success() {
-																			prePage.$vm.getCouponList() // 当返回成功的时候调用上一级页面的回调
-																     }
+																		if (typeof prePage
+																			.$vm
+																			.getCouponList ==
+																			"function"
+																		) {
+																			prePage
+																				.$vm
+																				.getCouponList()
+																		} else {
+																			prePage
+																				.$vm
+																				.getGoodsList()
+																		}
+																	}
 																})
 															}, 1000);
 														} else {
+															that.isLoading = false;
+															that.isClickSub = false;
 															uni.showToast({
 																icon: 'none',
 																title: auditRes[
@@ -277,6 +652,8 @@
 														}
 													});
 											} else {
+												that.isLoading = false;
+												that.isClickSub = false;
 												uni.showToast({
 													icon: 'none',
 													title: submitRes[
@@ -294,6 +671,8 @@
 										});
 
 									} else {
+										that.isLoading = false;
+										that.isClickSub = false;
 										uni.showToast({
 											icon: 'none',
 											title: saveRes[
@@ -315,6 +694,8 @@
 									}
 								});
 						} else {
+							that.isLoading = false;
+							that.isClickSub = false;
 							uni.showToast({
 								icon: 'none',
 								title: unAuditRes['Result'][
@@ -326,8 +707,8 @@
 				} else {
 					//提交数据整理，多单循环提交
 					var orderList = []
-					for(var element in that.goodsList){
-						if(orderList.findIndex(x => x.FID === that.goodsList[element][1])==-1){
+					for (var element in that.goodsList) {
+						if (orderList.findIndex(x => x.FID === that.goodsList[element][1]) == -1) {
 							//提交单据次数
 							orderList.push({
 								"FID": that.goodsList[element][1],
@@ -337,26 +718,30 @@
 									"FActRecQty": that.goodsList[element][12]
 								}]
 							})
-						}else{
-							for(var fEntity in orderList){
+						} else {
+							for (var fEntity in orderList) {
 								//单据明细组装
-								if(that.goodsList[element][1] == orderList[fEntity]['FID']){
-									if(orderList[fEntity]['FEntity'].findIndex(x => x.FEntryID === that.goodsList[element][2])==-1){
+								if (that.goodsList[element][1] == orderList[fEntity]['FID']) {
+									if (orderList[fEntity]['FEntity'].findIndex(x => x.FEntryID === that.goodsList[element]
+											[2]) == -1) {
 										orderList[fEntity]['FEntity'].push({
 											"FEntryID": that.goodsList[element][2],
 											"FActRecQty": that.goodsList[element][12]
 										})
-									}else{
+									} else {
 										//相同项进行数量合计
-										var findx = orderList[fEntity]['FEntity'].findIndex(x => x.FEntryID === that.goodsList[element][2]);
-										orderList[fEntity]['FEntity'][findx]['FActRecQty'] = that.addCount(parseFloat(orderList[fEntity]['FEntity'][findx]['FActRecQty']), parseFloat(that.goodsList[element][12]))
+										var findx = orderList[fEntity]['FEntity'].findIndex(x => x.FEntryID === that
+											.goodsList[element][2]);
+										orderList[fEntity]['FEntity'][findx]['FActRecQty'] = that.addCount(parseFloat(
+											orderList[fEntity]['FEntity'][findx]['FActRecQty']), parseFloat(that
+											.goodsList[element][12]))
 									}
-									
+
 								}
 							}
 						}
 					}
-					 for(var saveList in orderList){
+					for (var saveList in orderList) {
 						//反审
 						that.$api('unAudit', {
 							"formid": "SAL_OUTSTOCK",
@@ -403,50 +788,105 @@
 													}, 1).then(
 														auditRes => {
 															let auditReso = auditRes[0];
-															if (auditRes != null && auditRes['Result'][
+															if (auditRes != null && auditRes[
+																	'Result'][
 																	'ResponseStatus'
 																]['IsSuccess']) {
-																	//修改装箱单
-																	that.$api('kdSave', {
-																		"formid": "QDEP_Cust_PackInfo",
-																		"data": {
-																			"NeedUpDataFields": ["FEntity"],
-																			"NeedReturnFields": ["FEntity"],
-																			"IsDeleteEntry": false,
-																			"Model": {
-																				"FID": that.goodsList[0][13],
-																				"FIsRec": true,
-																			},
-																		}
-																	}, 1).then(
-																		takeRes => {
-																			let takeReso = takeRes[0];
-																			if (takeRes != null && takeRes['Result']['ResponseStatus']['IsSuccess']) {
-																				if(saveList+1 == orderList.length){
-																					uni.showToast({
-																						title: '收货成功',
-																						icon: 'success',
-																					});
-																					setTimeout(() => {
-																						var pages = getCurrentPages(); // 获取当前挂载的路由数组
-																						var prePage = pages[pages.length - 2] //获取 上一个页面
+																//修改装箱单
+																that.$api('kdSave', {
+																	"formid": "QDEP_Cust_PackInfo",
+																	"data": {
+																		"NeedUpDataFields": [
+																			"FEntity"
+																		],
+																		"NeedReturnFields": [
+																			"FEntity"
+																		],
+																		"IsDeleteEntry": false,
+																		"Model": {
+																			"FID": that
+																				.goodsList[
+																					0][13],
+																			"FIsRec": true,
+																		},
+																	}
+																}, 1).then(
+																	takeRes => {
+																		let takeReso = takeRes[
+																			0];
+																		if (takeRes != null &&
+																			takeRes['Result'][
+																				'ResponseStatus'
+																			]['IsSuccess']) {
+																			if (saveList + 1 ==
+																				orderList
+																				.length) {
+																				that.isLoading =
+																					false;
+																				that.isClickSub =
+																					false;
+																				uni.showToast({
+																					title: '收货成功',
+																					icon: 'success',
+																				});
+																				setTimeout(
+																					() => {
+																						var pages =
+																							getCurrentPages(); // 获取当前挂载的路由数组
+																						var prePage =
+																							pages[
+																								pages
+																								.length -
+																								2
+																							] //获取 上一个页面
 																						uni.navigateBack({
 																							success() {
-																									prePage.$vm.getCouponList() // 当返回成功的时候调用上一级页面的回调
-																							 }
+																								if (typeof prePage
+																									.$vm
+																									.getCouponList ==
+																									"function"
+																								) {
+																									prePage
+																										.$vm
+																										.getCouponList()
+																								} else {
+																									prePage
+																										.$vm
+																										.getGoodsList()
+																								}
+																							}
 																						})
-																					}, 1000);
-																				}
-																			} else {
-																				uni.showToast({
-																					icon: 'none',
-																					title: takeRes['Result']['ResponseStatus']['Errors'][0]['Message']
-																				})
+																					}, 1000
+																				);
 																			}
-																		});
-																
-																
+																		} else {
+																			that.isLoading =
+																				false;
+																			that.isClickSub =
+																				false;
+																			uni.showToast({
+																				icon: 'none',
+																				title: takeRes[
+																						'Result'
+																					]
+																					[
+																						'ResponseStatus'
+																					]
+																					[
+																						'Errors'
+																					]
+																					[0]
+																					[
+																						'Message'
+																					]
+																			})
+																		}
+																	});
+
+
 															} else {
+																that.isLoading = false;
+																that.isClickSub = false;
 																uni.showToast({
 																	icon: 'none',
 																	title: auditRes[
@@ -468,6 +908,8 @@
 															}
 														});
 												} else {
+													that.isLoading = false;
+													that.isClickSub = false;
 													uni.showToast({
 														icon: 'none',
 														title: submitRes[
@@ -483,8 +925,10 @@
 													})
 												}
 											});
-						
+
 										} else {
+											that.isLoading = false;
+											that.isClickSub = false;
 											uni.showToast({
 												icon: 'none',
 												title: saveRes[
@@ -506,6 +950,8 @@
 										}
 									});
 							} else {
+								that.isLoading = false;
+								that.isClickSub = false;
 								uni.showToast({
 									icon: 'none',
 									title: unAuditRes['Result'][
@@ -515,24 +961,37 @@
 							}
 						});
 					}
-					
-					
+
+
 				}
 			},
 			addCount(num1, num2) {
-			    let n1, n2, m
-			    try {
-			        n1 = num1.toString().split(".")[1].length
-			    } catch (e) {
-			        n1 = 0
-			    }
-			    try {
-			        n2 = num2.toString().split(".")[1].length
-			    } catch (e) {
-			        n2 = 0
-			    }
-			    m = Math.pow(10, Math.max(n1, n2))
-			    return (num1 * m + num2 * m) / m
+				let n1, n2, m
+				try {
+					n1 = num1.toString().split(".")[1].length
+				} catch (e) {
+					n1 = 0
+				}
+				try {
+					n2 = num2.toString().split(".")[1].length
+				} catch (e) {
+					n2 = 0
+				}
+				m = Math.pow(10, Math.max(n1, n2))
+				return (num1 * m + num2 * m) / m
+			},
+			arrayToTree(list, rootValue) {
+				const deepList = JSON.parse(JSON.stringify(list)) // 深拷贝
+				  const arr = []
+				  deepList.forEach(item => {
+				    if (item.parentId === rootValue) {
+				      const children = this.arrayToTree(deepList, item.barCode)
+				      children.length ? (item.children = children) : false
+				      // item.children = children // 如果希望每个item都有children属性, 可以直接赋值
+				      arr.push(item)
+				    }
+				  })
+				  return arr
 			},
 			// 商品列表
 			getGoodsList(billNo) {
@@ -540,11 +999,10 @@
 				that.loadStatus = 'loading';
 				let params = {
 					data: {
-						"FilterString": "FDocumentStatus ='C' and FBillNo='" + billNo + "'",
+						"FilterString": "FDocumentStatus ='C' and FBillNo='" + billNo + "' and FEntryOutStatus ='待收货'",
 						"FormId": "SAL_OUTSTOCK",
 						"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
 						"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
-						"Limit": "10"
 					}
 				}
 				that.$api('executeBillQuery', params, 1).then(res => {
@@ -552,13 +1010,101 @@
 					if (res.length > 0) {
 						that.isLoading = false;
 						that.goodsList = res;
-						if(that.goodsList[0][15] =='已收货'){
+						if (that.goodsList[0][15] == '已收货') {
 							that.isWarehousing = true;
 						}
-						if(that.goodsList[0][15] =='待收货'){
+						if (that.goodsList[0][15] == '待收货') {
 							that.isTake = true;
 						}
-						that.loadStatus = 'over';
+						if (that.goodsList[0][15] != '') {
+							let pickParams = {
+								data: {
+									"FilterString": "FOutBillNo='" + that.goodsList[0][0] + "' and FBoxQty=0 and FIsRec = 0",
+									"FormId": "QDEP_Cust_PackInfo",
+									"OrderString": "FBillNo ASC",
+									"FieldKeys": "FBillNo,FSrcID,FSrcEntryID,FCreateDate,FEntity_FEntryId,FMaterialID.FNumber,FMaterialName,FOutBillNo,FBoxQty,FBoxBarcode,FPackQty,FPackBarCode,FQty,FID,FEntity_FEntryID,FIsRec,FMarerialSpec",
+								}
+							}
+							that.$api('executeBillQuery', pickParams, 1).then(pickRes => {
+								if (pickRes.length > 0) {
+									console.log(pickRes);
+									var bigPick = []
+									for (var bigItem in pickRes) {
+										bigPick.push({
+											FBillNo: pickRes[bigItem][0],
+											FSrcID: pickRes[bigItem][1],
+											FSrcEntryID: pickRes[bigItem][2],
+											FCreateDate: pickRes[bigItem][3],
+											FEntity_FEntryId: pickRes[bigItem][4],
+											FMaterialFNumber: pickRes[bigItem][5],
+											FMaterialName: pickRes[bigItem][6],
+											FOutBillNo: pickRes[bigItem][7],
+											FBoxQty: pickRes[bigItem][8],
+											FBoxBarcode: pickRes[bigItem][9],
+											FPackQty: pickRes[bigItem][10],
+											FPackBarCode: pickRes[bigItem][11],
+											FQty: pickRes[bigItem][12],
+											FID: pickRes[bigItem][13],
+											FEntity_FEntryID: pickRes[bigItem][14],
+											FIsRec: pickRes[bigItem][15],
+											FMarerialSpec: pickRes[bigItem][16],
+											parentId: pickRes[bigItem][9]
+										})
+									}
+									var boxBarcodeArray = []
+									var packBarCodeArray = []
+									var nowArray = []
+									for (var bigItem in bigPick) {
+										if (boxBarcodeArray.indexOf(bigPick[bigItem].FPackBarCode) == -1) {
+											boxBarcodeArray.push(bigPick[bigItem].FPackBarCode)
+											bigPick.push({
+												parentId: -1,
+												barCode: bigPick[bigItem].FPackBarCode
+											})
+											packBarCodeArray.push(bigPick[bigItem].FBoxBarcode)
+											bigPick.push({
+												parentId: bigPick[bigItem].FPackBarCode,
+												barCode: bigPick[bigItem].FBoxBarcode
+											})
+										} else {
+											if (packBarCodeArray.indexOf(bigPick[bigItem].FBoxBarcode) == -
+												1) {
+												packBarCodeArray.push(bigPick[bigItem].FBoxBarcode)
+												bigPick.push({
+													parentId: bigPick[bigItem].FPackBarCode,
+													barCode: bigPick[bigItem].FBoxBarcode
+												})
+											}
+										}
+									}
+									console.log(bigPick)
+									that.goodsListT = that.arrayToTree(bigPick, -1);
+									that.$set(that, 'goodsListT', that.arrayToTree(bigPick, -1));
+									console.log(11111)
+									console.log(that.goodsListT)
+									that.$forceUpdate();
+									that.loadStatus = 'over';
+								} else {
+									if (pickRes.length == 0) {
+										uni.showToast({
+											icon: 'none',
+											title: "无数据"
+										})
+										that.goodsListT = []
+									} else {
+										uni.showToast({
+											icon: 'none',
+											title: pickRes[0][0]['Result']['ResponseStatus'][
+												'Errors'
+											][0]['Message']
+										})
+									}
+
+								}
+							});
+						} else {
+							that.loadStatus = 'over';
+						}
 					} else {
 						if (res.length == 0) {
 							uni.showToast({
@@ -580,7 +1126,7 @@
 				that.loadStatus = 'loading';
 				let params = {
 					data: {
-						"FilterString": "(FBoxBarcode='" + code + "' or FPackBarCode='" + code + "')",
+						"FilterString": "(FBoxBarcode='" + code + "' or FPackBarCode='" + code + "')  and FBoxQty=0 and FIsRec = 0",
 						"FormId": "QDEP_Cust_PackInfo",
 						"OrderString": "FBillNo ASC",
 						"FieldKeys": "FBillNo,FSrcID,FSrcEntryID,FCreateDate,FEntity_FEntryId,FMaterialID.FNumber,FMaterialName,FOutBillNo,FBoxQty,FBoxBarcode,FPackQty,FPackBarCode,FQty,FID,FEntity_FEntryID,FIsRec,FMarerialSpec",
@@ -591,11 +1137,64 @@
 					if (res.length > 0) {
 						that.isLoading = false;
 						that.goodsList = res;
-						if(that.goodsList[0][15]){
+						if (that.goodsList[0][15]) {
 							that.isTake = false;
-						}else{
+						} else {
 							that.isTake = true;
 						}
+						var bigPick = []
+						for (var bigItem in res) {
+							bigPick.push({
+								FBillNo: res[bigItem][0],
+								FSrcID: res[bigItem][1],
+								FSrcEntryID: res[bigItem][2],
+								FCreateDate: res[bigItem][3],
+								FEntity_FEntryId: res[bigItem][4],
+								FMaterialFNumber: res[bigItem][5],
+								FMaterialName: res[bigItem][6],
+								FOutBillNo: res[bigItem][7],
+								FBoxQty: res[bigItem][8],
+								FBoxBarcode: res[bigItem][9],
+								FPackQty: res[bigItem][10],
+								FPackBarCode: res[bigItem][11],
+								FQty: res[bigItem][12],
+								FID: res[bigItem][13],
+								FEntity_FEntryID: res[bigItem][14],
+								FIsRec: res[bigItem][15],
+								FMarerialSpec: res[bigItem][16],
+								parentId: res[bigItem][9]
+							})
+						}
+						var boxBarcodeArray = []
+						var packBarCodeArray = []
+						var nowArray = []
+						for (var bigItem in bigPick) {
+							if (boxBarcodeArray.indexOf(bigPick[bigItem].FPackBarCode) == -1) {
+								boxBarcodeArray.push(bigPick[bigItem].FPackBarCode)
+								bigPick.push({
+									parentId: -1,
+									barCode: bigPick[bigItem].FPackBarCode
+								})
+								packBarCodeArray.push(bigPick[bigItem].FBoxBarcode)
+								bigPick.push({
+									parentId: bigPick[bigItem].FPackBarCode,
+									barCode: bigPick[bigItem].FBoxBarcode
+								})
+							} else {
+								if (packBarCodeArray.indexOf(bigPick[bigItem].FBoxBarcode) == -1) {
+									packBarCodeArray.push(bigPick[bigItem].FBoxBarcode)
+									bigPick.push({
+										parentId: bigPick[bigItem].FPackBarCode,
+										barCode: bigPick[bigItem].FBoxBarcode
+									})
+								}
+							}
+						}
+						that.goodsListT = that.arrayToTree(bigPick, -1);
+						that.$set(that, 'goodsListT', that.arrayToTree(bigPick, -1));
+						console.log(11111)
+						console.log(that.goodsListT)
+						that.$forceUpdate();
 						that.loadStatus = 'over';
 					} else {
 						if (res.length == 0) {
@@ -603,6 +1202,7 @@
 								icon: 'none',
 								title: "无数据"
 							})
+							that.goodsListT = []
 						} else {
 							uni.showToast({
 								icon: 'none',
@@ -630,6 +1230,52 @@
 		height: auto;
 		background-color: #F3F3F3;
 		width: 100%;
+	}
+
+	.fot-text {
+		width: 100%;
+		height: 70rpx;
+		line-height: 70rpx;
+		display: flex;
+
+		.text-grey {
+			width: 50%;
+		}
+
+		.fot-btn {
+			width: 100%;
+			display: flex;
+			justify-content: flex-end;
+			height: 60rpx;
+
+			.buy-btn {
+				width: 140rpx;
+				height: 60rpx;
+				border-radius: 30rpx;
+				font-size: 26rpx;
+				font-family: PingFang SC;
+				font-weight: 400;
+				padding: 0;
+			}
+
+			.btn-end {
+				background: linear-gradient(90deg, #c6e2ff, #b9d3ee);
+				box-shadow: 1px 1px 1px 1px rgba(229, 138, 0, 0.22);
+				color: white;
+			}
+
+			.btn-nostart {
+				background: linear-gradient(90deg, #ffec8b, #eedc82);
+				box-shadow: 1px 1px 1px 1px rgba(229, 138, 0, 0.22);
+				color: #ff8247;
+			}
+
+			.btn-ing {
+				background: linear-gradient(90deg, #fff0f5, #ffe4e1);
+				box-shadow: 1px 1px 1px 1px rgba(229, 138, 0, 0.22);
+				color: rgba(238, 99, 99, 1);
+			}
+		}
 	}
 
 	.head_box {

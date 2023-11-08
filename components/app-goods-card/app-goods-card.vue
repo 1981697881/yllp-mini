@@ -1,5 +1,5 @@
 <template>
-	<view class="goods-box" v-if="detail" @tap="">
+	<view class="goods-box" v-if="detail" @tap="jumpToMiniProgram">
 		<view class="img-box">
 			<!-- <image v-if="isTag && detail.activity" class="tag-img" :src="tagPath[detail.activity.type]" mode=""></image> -->
 			<image class="img" :src="detail.image" lazy-load mode="scaleToFill"></image>
@@ -43,6 +43,22 @@ export default {
 	},
 	computed: {},
 	methods: {
+		jumpToMiniProgram(){
+			uni.navigateToMiniProgram({
+			    appId: 'wxc7c445137eaf0b62',//被跳转的appId
+			    path: 'pages/index/index',//要跳转的目标小程序（B小程序）的路径
+			    extraData: {},
+				envVersion: 'release', //跳转的版本：develop（开发版），trial（体验版），release（正式版）
+				success(res) {
+				    // 打开成功
+				    console.log(res)
+				},
+				fail(res) {
+			        // 打开失败
+				    console.log(res)
+				}
+			})
+		},
 		// 路由跳转
 		jump(path, parmas) {
 			this.$Router.push({

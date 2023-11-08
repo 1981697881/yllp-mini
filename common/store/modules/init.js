@@ -4,6 +4,7 @@ import store from '@/common/store'
 import Router from '@/common/router';
 import init from '@/csJson/init.json';
 import template from '@/csJson/template.json';
+import Wechat from '@/common/wechat/wechat';
 import {
 	INIT_DATA,
 	PAGE_ROUTES,
@@ -39,12 +40,13 @@ const actions = {
 			 });
 		})
 	},
-	getAppInit({
+	async getAppInit({
 		commit
 	}, options) {
 		uni.setStorageSync('mode', 'product');
-		return new Promise((resolve, reject) => {
+		return await new Promise((resolve, reject) => {
 			let res = init
+			uni.removeStorageSync('userInfo');
 			commit('INIT_DATA', res.data);
 			uni.setStorageSync('sysInfo', res.data.info);
 			uni.setStorageSync('shareInfo', res.data.share);
@@ -52,8 +54,12 @@ const actions = {
 			 //resolve(res)
 			 //初始化请求
 			api('validateUser',{username:"administrator",acctID:"6407dc00ad6d48",lcid:"2052",password:"kingdee123456!"},1).then(reso => {
-				uni.setStorageSync('kdservice-sessionid', reso.KDSVCSessionId);
-				resolve(res)
+				if(reso.LoginResultType == 1){
+					uni.setStorageSync('kdservice-sessionid', reso.KDSVCSessionId);
+					resolve(res)
+				}else{
+					reject(res)
+				}
 			}).catch(e => {
 				reject(e)
 			})

@@ -52,7 +52,6 @@ export default {
 			let initData = data;
 			var wechat = new Wechat();
 			if (initData.wechat.autologin) {
-				
 				// #ifdef H5
 				uni.setStorageSync('appid', initData.wechat.appid);
 				let token = await wechat.login();
@@ -169,7 +168,6 @@ export default {
 			wechat.checkMiniProgramUpdate();
 		}
 		// #endif
-		
 		await this.setAppInfo();
 		/* let local = await this.getAppLocal();
 		await this.getLocation(local); */
