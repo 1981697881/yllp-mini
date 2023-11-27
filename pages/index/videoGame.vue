@@ -13,7 +13,7 @@
 			</view>
 		</view>
 
-		<view class="content_box" v-if="!isTake && !isWarehousing">
+		<view class="content_box" v-if="!isTake">
 			<scroll-view :style="{ height: hHeight + 'px;background-color: #F3F3F3;' }" class="scroll-box bg-white"
 				scroll-y enable-back-to-top scroll-with-animation @scrolltolower="loadMore">
 				<view class="content-box">
@@ -85,6 +85,7 @@
 		mapActions,
 		mapState
 	} from 'vuex';
+	import Md5 from "js-md5"
 	export default {
 		components: {
 			fzCircuitMeal,
@@ -124,25 +125,33 @@
 				detail,
 				type
 			} = this.$Route.query;
-			console.log(detail)
-			if (type == 0) {
-				this.getGoodsList(JSON.parse(detail)[0])
-			} else if (type == 1) {
-				this.getPickList(detail);
+			if (detail instanceof Array) {
+				if (type == 0) {
+					this.getGoodsList(JSON.parse(detail)[0])
+				} else if (type == 1) {
+					this.getPickList(detail);
+				}
+			}else{
+				let q = decodeURIComponent(detail)
+				if (this.GetRequest(q).type == 1) {
+					this.getPickList(this.GetRequest(q).code);
+					this.scanCode = this.GetRequest(q).code
+				}
 			}
 			this.pickType = type
-
 		},
 		onLoad(options) {
-			let that = this;
-			let q = decodeURIComponent(options.q);
+			/* let that = this;
+			let q = decodeURIComponent(options.detail);
+			console.log(options.detail)
+			console.log(that.GetRequest(q).type)
 			if (typeof that.GetRequest(q).type != "undefined") {
 				if (that.GetRequest(q).type == 1) {
 					that.getPickList(that.GetRequest(q).code);
 					that.scanCode = that.GetRequest(q).code
 				}
-			}
-		},
+			} */
+		}, 
 		onUnload() {
 			var pages = getCurrentPages(); // 获取当前挂载的路由数组
 			var prePage = pages[pages.length - 2] //获取 上一个页面
@@ -205,27 +214,162 @@
 			},
 			onWarehousing() {
 				let that = this;
+				if (!that.userInfo[7]) {
+					return uni.showToast({
+						title: '该账号无收货权限',
+						icon: 'error',
+					});
+				}
 				that.isLoading = true;
 				that.isClickWare = true;
-				uni.showToast({
-					title: '入库成功',
-					icon: 'success',
-				});
-				setTimeout(() => {
-					that.isLoading = false;
-					that.isClickWare = false;
-					var pages = getCurrentPages(); // 获取当前挂载的路由数组
-					var prePage = pages[pages.length - 2] //获取 上一个页面
-					uni.navigateBack({
-						success() {
-							if (typeof prePage.$vm.getCouponList == "function") {
-								prePage.$vm.getCouponList()
-							} else {
-								prePage.$vm.getGoodsList()
+				var bDShopID = ""
+				let customerParams = {
+					data: {
+						"FilterString": "FNumber='" + that.goodsList[0][1]  + "'",
+						"FormId": "BD_Customer",
+						"FieldKeys": "FV8ID,FBDID,FName,FNumber,FCUSTID",
+					}
+				}
+				that.$api('executeBillQuery', customerParams, 1).then(customerRes => {
+					if (customerRes.length > 0) {
+						that.isLoading = false;
+						that.isClickWare = false;
+						if(customerRes[0][0] !='' || customerRes[0][1] !=''){
+							bDShopID = (customerRes[0][0] == ''?customerRes[0][1]:customerRes[0][0])
+							let params = {
+								"bDShopID": bDShopID,
+								"deliveryBillNo": that.goodsList[0][0],
+								"detailList": [],
+								"isCheck": true,
+								"supplier": that.goodsList[0][9],
+								/* "note": "",
+								"invoiceInfo": "",
+								"billDate": "",
+								"contacts": "",
+								"telephone": "", */
+								"timestamp": new Date().getTime()//,
+								
 							}
+							for(var data in that.goodsList){
+								params.detailList.push({
+									"Number": that.goodsList[data][5],
+									"Name": that.goodsList[data][6],
+									"ProductNo": that.goodsList[data][17],
+									"Unit": that.goodsList[data][7],
+									"Model": that.goodsList[data][16],
+									"Qty": that.goodsList[data][12],
+									"Price": that.goodsList[data][18],
+									"Amount": that.goodsList[data][19],
+								})
+							}
+							let signKey = ""
+							for(let obj in params){
+								if(params[obj] instanceof Array){
+									signKey+= obj+"="+JSON.stringify(params[obj])+"&"
+								}else{
+									signKey+= obj+"="+params[obj]+"&"
+								}
+							}
+							
+							signKey+="key=2uaH1yv8UIgvbuRVr32UpPjSgfsPj6RM"
+							params.sign = Md5(signKey).toUpperCase()
+							console.log(signKey)
+							console.log(params)
+							that.$api('addStorage', params,2).then(res => {
+								if (res.success) {
+									that.$api('kdSave', {
+										"formid": "SAL_OUTSTOCK",
+										"data": {
+											"NeedUpDataFields": ["FEntity"],
+											"NeedReturnFields": ["FEntity"],
+											"IsDeleteEntry": false,
+											"Model": {
+												"FID": that.goodsList[0][14],
+												"FOutStatus": "已入库",
+											},
+										}
+									}, 1).then(
+										saveRes => {
+											let saveReso = saveRes[0];
+											if (saveRes != null && saveRes['Result'][
+													'ResponseStatus'
+												]['IsSuccess']) {
+													uni.showToast({
+														title: '入库成功',
+														icon: 'success',
+													});
+													setTimeout(() => {
+														that.isLoading = false;
+														that.isClickWare = false;
+														var pages = getCurrentPages(); // 获取当前挂载的路由数组
+														var prePage = pages[pages.length - 2] //获取 上一个页面
+														uni.navigateBack({
+															success() {
+																if (typeof prePage.$vm.getCouponList == "function") {
+																	prePage.$vm.getCouponList()
+																} else {
+																	prePage.$vm.getGoodsList()
+																}
+															}
+														})
+													}, 1000);
+												} else {
+													that.isLoading = false;
+													that.isClickSub = false;
+													uni.showToast({
+														icon: 'none',
+														title: saveRes[
+																'Result'
+															]
+															[
+																'ResponseStatus'
+															]
+															[
+																'Errors'
+															]
+															[
+																0
+															]
+															[
+																'Message'
+															]
+													})
+												}
+										})
+								}else{
+									uni.showToast({
+										icon: 'none',
+										title: res.MsgText
+									})
+								}
+							});
+						}else{
+							uni.showToast({
+								icon: 'none',
+								title: "无门店信息，请联系管理员"
+							})
 						}
-					})
-				}, 1000);
+					} else {
+						that.isLoading = false;
+						that.isClickWare = false;
+						if (customerRes.length == 0) {
+							uni.showToast({
+								icon: 'none',
+								title: "无门店信息，请联系管理员"
+							})
+						} else {
+							uni.showToast({
+								icon: 'none',
+								title: customerRes[0][0]['Result']['ResponseStatus'][
+									'Errors'
+								][0]['Message']
+							})
+						}
+					
+					}
+				})
+				
+				
 			},
 			treeToArray(tree) {
 				const result = [];
@@ -999,10 +1143,10 @@
 				that.loadStatus = 'loading';
 				let params = {
 					data: {
-						"FilterString": "FDocumentStatus ='C' and FBillNo='" + billNo + "' and FEntryOutStatus ='待收货'",
+						"FilterString": "FDocumentStatus ='C' and FBillNo='" + billNo + "'",
 						"FormId": "SAL_OUTSTOCK",
 						"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-						"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel",
+						"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel,FMaterialId.FBARCODE,FTaxPrice,FAllAmount",
 					}
 				}
 				that.$api('executeBillQuery', params, 1).then(res => {
@@ -1016,7 +1160,7 @@
 						if (that.goodsList[0][15] == '待收货') {
 							that.isTake = true;
 						}
-						if (that.goodsList[0][15] != '') {
+						if (that.goodsList[0][15] == '待收货') {
 							let pickParams = {
 								data: {
 									"FilterString": "FOutBillNo='" + that.goodsList[0][0] + "' and FBoxQty=0 and FIsRec = 0",
@@ -1122,6 +1266,7 @@
 				});
 			}, // 商品列表
 			getPickList(code) {
+				console.log(code)
 				let that = this;
 				that.loadStatus = 'loading';
 				let params = {

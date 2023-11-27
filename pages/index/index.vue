@@ -59,9 +59,9 @@
 							<app-load v-model="isLoading"></app-load>
 						</view>
 						<!-- 功能标题 -->
-						<sh-title-card></sh-title-card>
+						<!-- <sh-title-card></sh-title-card> -->
 						<!-- 推荐商品 -->
-						<sh-hot-goods></sh-hot-goods>
+						<!-- <sh-hot-goods></sh-hot-goods> -->
 					</scroll-view>
 				</scroll-view>
 			</view>

@@ -9,6 +9,11 @@ export default {
 		method: 'GET',
 		// desc: '初始化数据',
 	},
+	addStorage: {
+		url: 'outside/api/thirdparty/addStorage',
+		auth: false,
+		method: 'POST',
+	},
 	storesForm: {
 		url: 'store/storesForm',
 		auth: false,

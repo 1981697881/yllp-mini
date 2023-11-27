@@ -1,17 +1,21 @@
 {
-	"dependencies": {
-		"better-scroll": "^1.14.1",
-		"dev": {
-			"mp-weixin": "cross-env NODE_ENV=development UNI_PLATFORM=mp-weixin vue-cli-service uni-build --watch --minimize"
-		},
-		"eslint": "^5.0.0",
-		"jweixin-module": "^1.6.0",
-		"miniapp-color-thief": "^1.0.5",
-		"uni-read-pages": "^1.0.5",
-		"uni-simple-router": "1.5.2",
-		"vue-qr": "^2.3.0"
-	},
-	"devDependencies": {
-		"sass-resources-loader": "^2.2.1"
-	}
+  "dependencies": {
+    "better-scroll": "^1.14.1",
+    "dev": {
+      "mp-weixin": "cross-env NODE_ENV=development UNI_PLATFORM=mp-weixin vue-cli-service uni-build --watch --minimize"
+    },
+    "eslint": "^5.0.0",
+    "jweixin-module": "^1.6.0",
+    "miniapp-color-thief": "^1.0.5",
+    "uni-read-pages": "^1.0.5",
+    "uni-simple-router": "1.5.2",
+    "vue-qr": "^2.3.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "browserslist": "^4.22.1",
+    "caniuse-lite": "^1.0.30001564",
+    "js-md5": "^0.8.3",
+    "sass-resources-loader": "^2.2.1"
+  }
 }

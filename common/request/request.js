@@ -1,11 +1,11 @@
 import {
-	API_URL,API_URLT
+	API_URL,API_URLT,API_URLV8
 } from '@/env'
 
 export default class Request {
 	constructor(type) {
 		this.config = {
-			baseUrl: type == 0 ? API_URL : API_URLT,
+			baseUrl: type == 0 ? API_URL : (type == 1? API_URLT: API_URLV8),
 			header: {
 				'content-type': 'application/json',
 				'platform': uni.getStorageSync('platform'),
