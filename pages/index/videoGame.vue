@@ -37,7 +37,7 @@
 						<view class="goods-item" v-for="(goods, index) in goodsListT" :key="index">
 							<fz-circuit-pick :detail="goods" :pickType="pickType" :isTag="true">
 								<block slot="btn">
-									<view class="fot-text" v-if="isTake">
+									<view class="fot-text" v-if="isTake && goods.children[0].children[0].FBoxQty==0">
 										<view class="fot-btn">
 											<button :disabled="isClickSub" @tap.stop="takeOver(goods)"
 												class="cu-btn round lines-blue buy-btn">
@@ -62,7 +62,7 @@
 			<view class="tabbar-box">
 				<view class="tabbar-item">
 					<button class="btn1" v-if="isWarehousing" :disabled="isClickWare"
-						@tap.stop="onWarehousing">入库V8</button>
+						@tap.stop="onWarehousing">入库</button>
 					<!-- <button class="btn2" v-if="isTake" :disabled="isClickSub" @tap.stop="onSubmit">确认收货</button> -->
 				</view>
 			</view>
@@ -121,11 +121,28 @@
 			//this.init();
 		},
 		onShow() {
-			const {
+			/* const {
 				detail,
 				type
 			} = this.$Route.query;
-			if (detail instanceof Array) {
+			console.log(detail)
+			console.log(detail instanceof String)
+			let url = "http://ylkd.gzfzdev.com:8090?type=1&code=B1697096583616"
+			console.log(typeof url == 'string')
+			console.log(typeof detail == 'string')
+			console.log(isJsonString(url))
+			console.log(isJsonString(detail))
+			function isJsonString(str){
+				try {
+				  const toObj = JSON.parse(str) // json字符串转对象
+				  if (toObj && typeof toObj === 'object') { 
+				    return true
+				  }
+				} catch {
+					return false
+				}
+			}
+			if (isJsonString(detail)) {
 				if (type == 0) {
 					this.getGoodsList(JSON.parse(detail)[0])
 				} else if (type == 1) {
@@ -136,21 +153,59 @@
 				if (this.GetRequest(q).type == 1) {
 					this.getPickList(this.GetRequest(q).code);
 					this.scanCode = this.GetRequest(q).code
+				} 
+			}
+			this.pickType = type */
+		},
+		onLoad(options) {
+			let that = this;
+			const {
+				detail,
+				type
+			} = this.$Route.query;
+			console.log(detail)
+			console.log("数据")
+			console.log(options)
+			console.log(decodeURIComponent(options.detail))
+			console.log(options.detail)
+			console.log(isJsonString(options.detail))
+			function isJsonString(str){
+				try {
+				  const toObj = JSON.parse(str) // json字符串转对象
+				  /*
+				      判断条件 1. 排除null可能性
+				               2. 确保数据是对象或数组
+				  */
+				  if (toObj && typeof toObj === 'object') { 
+				    return true
+				  }
+				} catch { 
+					return false
+				}
+			}
+			if (isJsonString(detail)) {
+				if (type == 0) {
+					this.getGoodsList(JSON.parse(detail)[0])
+				} else if (type == 1) {
+					this.getPickList(detail);
+				}
+			}else{
+				let q = decodeURIComponent(options.detail);
+				console.log(options.detail)
+				console.log(that.GetRequest(q).type)
+				if (typeof that.GetRequest(q).type != "undefined") {
+					if (that.GetRequest(q).type == 1) {
+						that.getPickList(that.GetRequest(q).code);
+						that.scanCode = that.GetRequest(q).code
+					}
+				}else{ 
+					uni.showToast({
+						title: '扫描错误，请检查二维码', 
+						icon: 'error',
+					});
 				}
 			}
 			this.pickType = type
-		},
-		onLoad(options) {
-			/* let that = this;
-			let q = decodeURIComponent(options.detail);
-			console.log(options.detail)
-			console.log(that.GetRequest(q).type)
-			if (typeof that.GetRequest(q).type != "undefined") {
-				if (that.GetRequest(q).type == 1) {
-					that.getPickList(that.GetRequest(q).code);
-					that.scanCode = that.GetRequest(q).code
-				}
-			} */
 		}, 
 		onUnload() {
 			var pages = getCurrentPages(); // 获取当前挂载的路由数组
@@ -233,7 +288,6 @@
 				that.$api('executeBillQuery', customerParams, 1).then(customerRes => {
 					if (customerRes.length > 0) {
 						that.isLoading = false;
-						that.isClickWare = false;
 						if(customerRes[0][0] !='' || customerRes[0][1] !=''){
 							bDShopID = (customerRes[0][0] == ''?customerRes[0][1]:customerRes[0][0])
 							let params = {
@@ -300,7 +354,6 @@
 													});
 													setTimeout(() => {
 														that.isLoading = false;
-														that.isClickWare = false;
 														var pages = getCurrentPages(); // 获取当前挂载的路由数组
 														var prePage = pages[pages.length - 2] //获取 上一个页面
 														uni.navigateBack({
@@ -1146,7 +1199,7 @@
 						"FilterString": "FDocumentStatus ='C' and FBillNo='" + billNo + "'",
 						"FormId": "SAL_OUTSTOCK",
 						"OrderString": "FBillNo ASC,FMaterialId.FNumber ASC",
-						"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.FSpecification,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel,FMaterialId.FBARCODE,FTaxPrice,FAllAmount",
+						"FieldKeys": "FBillNo,FCustomerID.FNumber,FCustomerID.FName,FApproveDate,FEntity_FEntryId,FMaterialId.FNumber,FMaterialId.FName,FMaterialId.F_RXDD_MulLangText,FSaleOrgId.FNumber,FSaleOrgId.FName,FUnitID.FNumber,FUnitID.FName,FRealQty,FSrcBillNo,FID,FOutStatus,FMateriaModel,FMaterialId.FBARCODE,FTaxPrice,FAllAmount",
 					}
 				}
 				that.$api('executeBillQuery', params, 1).then(res => {
@@ -1163,10 +1216,10 @@
 						if (that.goodsList[0][15] == '待收货') {
 							let pickParams = {
 								data: {
-									"FilterString": "FOutBillNo='" + that.goodsList[0][0] + "' and FBoxQty=0 and FIsRec = 0",
+									"FilterString": "FOutBillNo='" + that.goodsList[0][0] + "' and FIsRec = 0",
 									"FormId": "QDEP_Cust_PackInfo",
 									"OrderString": "FBillNo ASC",
-									"FieldKeys": "FBillNo,FSrcID,FSrcEntryID,FCreateDate,FEntity_FEntryId,FMaterialID.FNumber,FMaterialName,FOutBillNo,FBoxQty,FBoxBarcode,FPackQty,FPackBarCode,FQty,FID,FEntity_FEntryID,FIsRec,FMarerialSpec",
+									"FieldKeys": "FBillNo,FSrcID,FSrcEntryID,FCreateDate,FEntity_FEntryId,FMaterialID.FNumber,FMaterialName,FOutBillNo,FBoxQty,FBoxBarcode,FPackQty,FPackBarCode,FQty,FID,FEntity_FEntryID,FIsRec,FMaterialID.F_RXDD_MulLangText,FUnitName",
 								}
 							}
 							that.$api('executeBillQuery', pickParams, 1).then(pickRes => {
@@ -1192,6 +1245,7 @@
 											FEntity_FEntryID: pickRes[bigItem][14],
 											FIsRec: pickRes[bigItem][15],
 											FMarerialSpec: pickRes[bigItem][16],
+											FUnitName: pickRes[bigItem][17],
 											parentId: pickRes[bigItem][9]
 										})
 									}
@@ -1271,10 +1325,10 @@
 				that.loadStatus = 'loading';
 				let params = {
 					data: {
-						"FilterString": "(FBoxBarcode='" + code + "' or FPackBarCode='" + code + "')  and FBoxQty=0 and FIsRec = 0",
+						"FilterString": "(FBoxBarcode='" + code + "' or FPackBarCode='" + code + "') and FIsRec = 0",
 						"FormId": "QDEP_Cust_PackInfo",
 						"OrderString": "FBillNo ASC",
-						"FieldKeys": "FBillNo,FSrcID,FSrcEntryID,FCreateDate,FEntity_FEntryId,FMaterialID.FNumber,FMaterialName,FOutBillNo,FBoxQty,FBoxBarcode,FPackQty,FPackBarCode,FQty,FID,FEntity_FEntryID,FIsRec,FMarerialSpec",
+						"FieldKeys": "FBillNo,FSrcID,FSrcEntryID,FCreateDate,FEntity_FEntryId,FMaterialID.FNumber,FMaterialName,FOutBillNo,FBoxQty,FBoxBarcode,FPackQty,FPackBarCode,FQty,FID,FEntity_FEntryID,FIsRec,FMaterialID.F_RXDD_MulLangText,FUnitName",
 					}
 				}
 				that.$api('executeBillQuery', params, 1).then(res => {
@@ -1307,6 +1361,7 @@
 								FEntity_FEntryID: res[bigItem][14],
 								FIsRec: res[bigItem][15],
 								FMarerialSpec: res[bigItem][16],
+								FUnitName: res[bigItem][17],
 								parentId: res[bigItem][9]
 							})
 						}

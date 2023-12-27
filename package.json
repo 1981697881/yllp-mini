@@ -13,8 +13,8 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
-    "browserslist": "^4.22.1",
-    "caniuse-lite": "^1.0.30001564",
+    "browserslist": "^4.22.2",
+    "caniuse-lite": "^1.0.30001566",
     "js-md5": "^0.8.3",
     "sass-resources-loader": "^2.2.1"
   }

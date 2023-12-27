@@ -5,9 +5,9 @@
 			<view class="cont-tier flex flex-wrap justify-between">
 				<view class="tier-center">
 					<view class=" text-bold">{{detail[6]}}</view>
-					<view class="cent-tip ">规格型号：<text class="text-black">{{detail[16]}}</text></view>
+					<view class="cent-tip ">规格型号：<text class="text-black">{{detail[7]}}</text></view>
 					<view class="flex cent-bottom">
-						<view >单位：<text class="text-black" v-if="pickType==0">{{detail[11]}}</text></view>
+						<view >单位：<text class="text-black">{{detail[11]}}</text></view>
 						<view class="text-black">X {{detail[12]}}</view>
 					</view>
 				</view>
